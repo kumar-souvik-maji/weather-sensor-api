@@ -1,0 +1,39 @@
+# ============================================================
+# Java / Spring Boot / Maven / IntelliJ Project .gitignore
+# ============================================================
+
+# Maven build directories
+target/
+build/
+out/
+
+# IntelliJ IDEA project files
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code settings
+.vscode/
+
+# Logs
+*.log
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+
+# Environment / secret files
+.env
+*.env
+application-*.yml
+application-*.yaml
+application-*.properties
+
+# Crash logs / backups
+hs_err_pid*
+replay_pid*
