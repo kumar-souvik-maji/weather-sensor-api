@@ -1,101 +1,146 @@
-# weather-sensor-api
-# 🌦️ Weather Sensor Metrics API
+# Weather Sensor Metrics API
 
-A small Spring Boot 3 application that ingests weather sensor readings and
-returns basic statistics (**min**, **max**, **sum**, **average**) for one or more sensors.
+This project is a Spring Boot 3 application designed to ingest weather sensor readings and provide statistical insights such as minimum, maximum, sum, and average for selected sensors and metrics. It demonstrates clean backend architecture, proper layering, DTO-based API design, unit and integration testing, and is suitable for coding challenges or real-world microservice foundations.
 
-The goal is to show **clean design**, **clear package structure**, and **simple tests**
-that are easy to understand even for beginners.
+## 1. Overview
 
----
+The application exposes two main REST endpoints:
+1. To ingest weather sensor data.
+2. To query aggregated statistics for selected sensors and metrics.
 
-## ⚙️ 1. Tech Stack
+Each reading includes:
+- Sensor ID  
+- Metric type (temperature, humidity, wind speed)  
+- Metric value  
+- Timestamp  
 
-- ☕ Java 17  
-- 🌱 Spring Boot 3 (Web, Validation, Data JPA)  
-- 🗄️ H2 In-Memory Database  
-- 🧪 JUnit 5 + Spring Boot Test  
+All incoming data is validated and stored in an in-memory H2 database. The service layer performs filtering, grouping, and computation of aggregates based on the query.
 
----
+## 2. Technology Stack
 
-## 🧩 2. Project Structure
+- Java 17  
+- Spring Boot 3 (Web, Validation, Data JPA)  
+- H2 in-memory database  
+- Maven  
+- JUnit 5  
 
-`com.example.weather.api` package:
+## 3. Project Structure
 
-- **WeatherSensorApiApplication** – main Spring Boot entry class.
+Base package: `com.example.weather.api`
 
-### controller
-- **MetricsController**
-  - `POST /api/metrics/ingest` – ingest one sensor reading.
-  - `POST /api/metrics/query` – query statistics.
+controller  
+- MetricsController
 
-### dto
-- **MetricIngestionRequest** – request body for `/ingest`.  
-- **MetricQueryRequest** – request body for `/query`.  
-- **MetricStatisticResponse** – one result row per sensor + metric.
+dto  
+- MetricIngestionRequest  
+- MetricQueryRequest  
+- MetricStatisticResponse  
 
-### model
-- **MetricRecord** – JPA entity for a single reading.
+model  
+- MetricRecord  
 
-### enums
-- **MetricType** – TEMPERATURE, HUMIDITY, WIND_SPEED.  
-- **StatisticType** – MIN, MAX, SUM, AVG.
+enums  
+- MetricType (TEMPERATURE, HUMIDITY, WIND_SPEED)  
+- StatisticType (MIN, MAX, SUM, AVG)  
 
-### repository
-- **MetricRecordRepository**
-  - Uses Spring Data JPA.
-  - Custom queries:
-    - `findByCriteria(...)` – filter by sensors, metrics, and date range.
-    - `findLatestByCriteria(...)` – latest data when no date range is provided.
+repository  
+- MetricRecordRepository  
 
-### service
-- **MetricIngestionService** – saves new readings.  
-- **MetricQueryService** – loads records, groups by `(sensorId, metricType)`, computes requested statistic.
+service  
+- MetricIngestionService  
+- MetricQueryService  
 
-### exception
-- **ApiError** – unified error response.  
-- **GlobalExceptionHandler** – maps exceptions to JSON errors.
+exception  
+- ApiError  
+- GlobalExceptionHandler  
 
----
+## 4. How to Run This Project
 
-## 🧠 3. Design Choices and Patterns
+### Prerequisites
+- Install JDK 17  
+- Install Maven 3.8+  
+- Ensure JAVA_HOME is set correctly  
 
-### Layered Architecture
+### Clone the repository
+git clone https://github.com/kumar-souvik-maji/weather-sensor-api.git
+cd weather-sensor-api
 
-`Controller → Service → Repository → Database`
+### Build the project
+mvn clean install
+### To build without running tests:
+mvn clean install -DskipTests
+### Run the application
+mvn spring-boot:run
 
-- The **Controller** handles HTTP requests and delegates to services.  
-- The **Service layer** contains business logic (statistics computation).  
-- The **Repository** hides persistence details (H2 today, could be PostgreSQL later).  
+5. REST API Details
+5.1 Ingest Metric
 
-This is a standard Spring Boot backend structure, promoting maintainability and testability.
+POST /api/metrics/ingest
+Content-Type: application/json
+Example:
 
----
-
-### DTO Pattern
-
-We use DTOs (Data Transfer Objects) to decouple API contracts from database entities:
-
-- `MetricIngestionRequest`, `MetricQueryRequest`, `MetricStatisticResponse`  
-- Bean Validation (`@NotNull`, `@NotBlank`) ensures clean input data.
-
----
-
-### Repository Pattern
-
-`MetricRecordRepository` abstracts away the data layer:
-
-- Spring Data JPA generates the implementation.
-- Custom `@Query` logic handles filtering and “latest record” behavior.
-
----
-
-### Statistic Calculation (Strategy-Ready Design)
-
-Currently implemented via a simple `switch` in `MetricQueryService`:
-
-```java
-private BigDecimal computeStatistic(List<MetricRecord> records, StatisticType type) {
-    // MIN, MAX, SUM, AVG
+{
+  "sensorId": "sensor-1",
+  "metricType": "TEMPERATURE",
+  "metricValue": 21.5,
+  "timestamp": "2025-11-10T10:15:30Z"
 }
+
+5.2 Query Metrics
+
+POST /api/metrics/query
+Example:
+
+{
+  "sensorIds": ["sensor-1", "sensor-2"],
+  "metrics": ["TEMPERATURE", "HUMIDITY"],
+  "statistic": "AVG",
+  "from": "2025-11-01T00:00:00Z",
+  "to": "2025-11-10T23:59:59Z"
+}
+
+
+Example response:
+
+[
+  {
+    "sensorId": "sensor-1",
+    "metricType": "TEMPERATURE",
+    "statistic": "AVG",
+    "value": 20.75
+  }
+]
+
+
+Rules:
+
+sensorIds may be null or empty
+
+metrics must contain at least one metric
+
+Supported statistics: MIN, MAX, SUM, AVG
+
+Date range must be between 1 day and 1 month
+
+If date range is missing, latest data per sensor and metric is used
+
+6. Design and Architecture
+Layered Architecture
+
+Controller → Service → Repository → Database
+
+Controller manages HTTP layer and validation
+
+Service handles all business logic
+
+Repository abstracts database interaction
+
+DTO-Based API
+
+DTOs are independent of database entities to maintain API stability.
+
+Statistic Processing
+
+Statistics are computed in the service layer in a clean, easily-extendable design.
+
 
